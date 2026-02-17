@@ -1,4 +1,5 @@
 # src/infra_simulator.py
+import argparse
 import json
 from pathlib import Path
 
@@ -10,16 +11,22 @@ from src.validator import validate_instance, validate_instances_file
 CONFIG_PATH = Path("configs") / "instances.json"
 
 
-def prompt_machine() -> dict:
-    name = input("Enter machine name (or 'done' to finish): ").strip()
-    if name.lower() == "done":
-        return {"_done": True}
-
-    os_name = input("Enter OS (Ubuntu/CentOS): ").strip()
-    cpu = input("Enter CPU (e.g., 2vCPU): ").strip()
-    ram = input("Enter RAM (e.g., 4GB): ").strip()
-
-    return {"name": name, "os": os_name, "cpu": cpu, "ram": ram}
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Provision infrastructure instances")
+    parser.add_argument(
+        "--instance",
+        action="append",
+        nargs=4,
+        metavar=("NAME", "OS", "CPU", "RAM"),
+        required=True,
+        help="Instance spec as: NAME OS CPU RAM. Repeat for multiple machines.",
+    )
+    parser.add_argument(
+        "--config",
+        default=str(CONFIG_PATH),
+        help=f"Output config path (default: {CONFIG_PATH})",
+    )
+    return parser.parse_args()
 
 
 def save_instances(instances: list[dict]) -> None:
@@ -32,6 +39,10 @@ def save_instances(instances: list[dict]) -> None:
 
 
 def main():
+    global CONFIG_PATH
+    args = parse_args()
+    CONFIG_PATH = Path(args.config)
+
     logger.info("Provisioning started.")
 
     ok, err = validate_instances_file(CONFIG_PATH)
@@ -42,17 +53,15 @@ def main():
 
     instances: list[dict] = []
 
-    while True:
-        data = prompt_machine()
-
-        if data.get("_done"):
-            break
+    for index, instance_args in enumerate(args.instance, start=1):
+        name, os_name, cpu, ram = instance_args
+        data = {"name": name, "os": os_name, "cpu": cpu, "ram": ram}
 
         ok, err = validate_instance(data)
         if not ok:
-            logger.error(f"Invalid input: {err}")
-            print(f"[ERROR] Invalid input: {err}")
-            continue
+            logger.error(f"Invalid --instance #{index}: {err}")
+            print(f"[ERROR] Invalid --instance #{index}: {err}")
+            return
 
         machine = Machine(**data)
         machine.log_creation()

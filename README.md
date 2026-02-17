@@ -27,14 +27,22 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-python infra_simulator.py
+python infra_simulator.py --instance web-1 Ubuntu 2vCPU 4GB
 ```
 
 The script will:
-- ask for VM definitions
+- read VM definitions from CLI arguments
 - validate each input
 - save valid instances to `configs/instances.json`
 - write logs to `logs/provisioning.log`
+
+Multiple instances:
+
+```bash
+python infra_simulator.py \
+  --instance web-1 Ubuntu 2vCPU 4GB \
+  --instance db-1 CentOS 4vCPU 8GB
+```
 
 ## Example input format
 - name: `web-1`
