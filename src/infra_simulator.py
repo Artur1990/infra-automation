@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.logger import logger
 from src.machine import Machine
-from src.validator import validate_instance
+from src.validator import validate_instance, validate_instances_file
 
 
 CONFIG_PATH = Path("configs") / "instances.json"
@@ -33,6 +33,12 @@ def save_instances(instances: list[dict]) -> None:
 
 def main():
     logger.info("Provisioning started.")
+
+    ok, err = validate_instances_file(CONFIG_PATH)
+    if not ok:
+        logger.error(f"Invalid config file: {err}")
+        print(f"[ERROR] Invalid config file: {err}")
+        return
 
     instances: list[dict] = []
 
