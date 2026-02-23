@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -45,4 +47,28 @@ def validate_instance(payload: dict) -> InstanceSpec:
     return InstanceSpec.model_validate(payload)
 
 
-__all__ = ["InstanceSpec", "ValidationError", "validate_instance"]
+def validate_instances_file(path: str | Path) -> tuple[bool, str]:
+    config_path = Path(path)
+    if not config_path.exists():
+        return True, ""
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except json.JSONDecodeError as exc:
+        return False, f"{config_path}: invalid JSON at line {exc.lineno}, column {exc.colno} ({exc.msg})"
+    except OSError as exc:
+        return False, f"{config_path}: cannot read file ({exc})"
+
+    if not isinstance(payload, list):
+        return False, f"{config_path}: pydantic validation failed (top-level JSON must be an array)"
+
+    try:
+        for idx, item in enumerate(payload, start=1):
+            InstanceSpec.model_validate(item)
+        return True, ""
+    except ValidationError as exc:
+        return False, f"{config_path}: pydantic validation failed for item #{idx} ({exc.errors()[0]['msg']})"
+
+
+__all__ = ["InstanceSpec", "ValidationError", "validate_instance", "validate_instances_file"]

@@ -27,22 +27,33 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-python infra_simulator.py --instance web-1 Ubuntu 2vCPU 4GB
+python infra_simulator.py
 ```
 
 The script will:
-- read VM definitions from CLI arguments
+- prompt for VM definitions interactively
 - validate each input
 - save valid instances to `configs/instances.json`
 - write logs to `logs/provisioning.log`
+- optionally run `scripts/setup_nginx.sh` to install/configure Nginx
 
-Multiple instances:
+Run with CLI arguments (optional mode):
 
 ```bash
 python infra_simulator.py \
   --instance web-1 Ubuntu 2vCPU 4GB \
   --instance db-1 CentOS 4vCPU 8GB
 ```
+
+Run provisioning + Nginx setup:
+
+```bash
+python infra_simulator.py \
+  --instance web-1 Ubuntu 2vCPU 4GB \
+  --setup-nginx
+```
+
+Note: `--setup-nginx` expects a Linux host with `bash` and either `apt-get` or `yum`.
 
 ## Example input format
 - name: `web-1`
